@@ -1,0 +1,11 @@
+{
+  "interface": "wlan0",
+  "scan_interval": 60,
+  "ultrasonic_trigger_pin": 23,
+  "ultrasonic_echo_pin": 24,
+  "ir_pin": 17,
+  "log_directory": "logs",
+  "iperf_server": "iperf.example.com",
+  "targets": ["8.8.8.8", "1.1.1.1", "google.com"],
+  "mock_mode": true
+}
