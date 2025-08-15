@@ -1,23 +1,24 @@
 # EnviroNet Analyzer
 
-A Raspberry Pi-based system that correlates environmental factors with WiFi network performance, designed to demonstrate embedded Linux networking expertise.
+A Raspberry Pi-based system that correlates environmental factors with WiFi network performance, designed to demonstrate embedded Linux networking protocols and analysis with real-world, data-driven insight.
 
 ## Project Overview
 
-EnviroNet Analyzer uses ultrasonic and IR sensors to detect environmental changes, while simultaneously monitoring WiFi network performance. This creates a comprehensive picture of how physical factors impact wireless connectivity.
+EnviroNet Analyzer combines ultrasonic and IR sensors to detect environmental changes, while continuously monitoring WiFi signal strength and network performance. This enables detailed analysis of how physical factors—like movement or object placement—affect wireless connectivity and reliability.
 
-Key features:
+**Key features:**
 - Environmental sensing (IR motion detection, ultrasonic distance measurement)
-- WiFi network scanning and signal strength monitoring
+- WiFi network scanning and signal strength monitoring (RSSI, SSID, BSSID, channel)
 - Network performance testing (ping, throughput, packet loss)
-- Correlation of environmental events with network performance
-- Automated data logging and analysis
-- Modular architecture with support for both real and mock hardware
+- Correlation of environmental events with real-time network metrics
+- Rboust automated data logging with timestamped sensor and network events
+- Modular architecture with interchangeable real and mock hardware for development and testing
+- Configurable analysis scripts for visualization and post-processing
 
 ## Hardware Requirements
 
 - Raspberry Pi 4 Model B (8GB) running Ubuntu 22.04 LTS Server
-- PandaWireless AC1200 WiFi adapter
+- PandaWireless AC1200 WiFi adapter (stable dual-band support)
 - SparkFun TinkerKit with:
   - IR sensor
   - Ultrasonic sensor
@@ -72,7 +73,7 @@ python main.py --analyze
 
 ### Set Up as a Service
 
-For continuous operation:
+For unattended, long-term operation:
 ```bash
 ./scripts/setup_service.sh
 sudo systemctl start environet-analyzer
@@ -109,18 +110,18 @@ This project follows a modular approach:
 
 1. Each hardware component has both real and mock implementations
 2. Core functionality is tested independently
-3. The main script integrates all components
-4. Logging provides comprehensive data for analysis
+3. The main script integrates all modules for end-to-end operation
+4. Automated, timestamped logging enables correlation of sensor events and network performance for later analysis
+## Homelab Learning Outcomes
 
-## Demonstrated Skills
+Building and operating this homelab will help you develop and reinforce skills in:
 
-This project showcases skills relevant to embedded networking roles:
-
-- **Embedded Linux**: Package management, service configuration, scripting
-- **Networking**: WiFi configuration, performance testing, driver integration
-- **Hardware Integration**: Sensor interfacing, GPIO programming
-- **Software Engineering**: Modular design, testing, logging
-- **Automation**: Scripted setup, continuous monitoring
+- **Embedded Linux:** Package management, service configuration, and automation scripting
+- **Networking:** WiFi configuration, signal monitoring, performance diagnostics, and driver integration
+- **Hardware Integration:** Sensor interfacing (GPIO/I2C), circuit prototyping, and robust error handling
+- **Software Engineering:** Modular design, test-driven development, and comprehensive logging strategies
+- **Automation:** Scripted setup, unattended operation, and systemd service integration
+- **Data Analysis:** Structured event logging, correlation analysis, and result visualization
 
 ## License
 
