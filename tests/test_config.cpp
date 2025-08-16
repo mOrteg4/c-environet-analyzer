@@ -78,7 +78,7 @@ TEST_F(ConfigTest, DefaultConfiguration) {
 
 // Test configuration loading from file
 TEST_F(ConfigTest, LoadFromFile) {
-    std::string config_content = R"({
+    std::string config_content = R"CFG({
         "i2c": {
             "mock_mode": false,
             "bus_id": 2,
@@ -91,7 +91,7 @@ TEST_F(ConfigTest, LoadFromFile) {
             "scan_interval_ms": 10000,
             "monitor_mode": true
         }
-    })";
+    })CFG";
     
     std::string config_file = GetTestConfigPath("test_config.json");
     CreateTestConfigFile(config_file, config_content);
@@ -116,7 +116,7 @@ TEST_F(ConfigTest, LoadFromFile) {
 
 // Test configuration loading from JSON string
 TEST_F(ConfigTest, LoadFromJsonString) {
-    std::string json_string = R"({
+    std::string json_string = R"CFG({
         "i2c": {
             "mock_mode": true,
             "sample_interval_ms": 50
@@ -125,7 +125,7 @@ TEST_F(ConfigTest, LoadFromJsonString) {
             "max_file_size_mb": 50,
             "max_files": 5
         }
-    })";
+    })CFG";
     
     Config config = Config::from_json(json_string);
     
@@ -218,11 +218,11 @@ TEST_F(ConfigTest, InvalidJsonHandling) {
     EXPECT_THROW(Config::from_json(empty_json), std::runtime_error);
     
     // Test missing required fields
-    std::string incomplete_json = R"({
+    std::string incomplete_json = R"CFG({
         "i2c": {
             "mock_mode": true
         }
-    })";
+    })CFG";
     
     // Should not throw for incomplete JSON (uses defaults)
     EXPECT_NO_THROW(Config::from_json(incomplete_json));
@@ -236,11 +236,11 @@ TEST_F(ConfigTest, FileNotFound) {
 
 // Test configuration with empty arrays
 TEST_F(ConfigTest, EmptyArrays) {
-    std::string config_with_empty_arrays = R"({
+    std::string config_with_empty_arrays = R"CFG({
         "metrics": {
             "ping_targets": []
         }
-    })";
+    })CFG";
     
     Config config = Config::from_json(config_with_empty_arrays);
     EXPECT_TRUE(config.metrics.ping_targets.empty());
@@ -248,14 +248,14 @@ TEST_F(ConfigTest, EmptyArrays) {
 
 // Test configuration with very large values
 TEST_F(ConfigTest, LargeValues) {
-    std::string config_with_large_values = R"({
+    std::string config_with_large_values = R"CFG({
         "i2c": {
             "sample_interval_ms": 86400000
         },
         "pcap": {
             "max_file_size_mb": 1073741824
         }
-    })";
+    })CFG";
     
     Config config = Config::from_json(config_with_large_values);
     EXPECT_EQ(config.i2c.sample_interval_ms, 86400000);
@@ -264,14 +264,14 @@ TEST_F(ConfigTest, LargeValues) {
 
 // Test configuration with special characters
 TEST_F(ConfigTest, SpecialCharacters) {
-    std::string config_with_special_chars = R"({
+    std::string config_with_special_chars = R"CFG({
         "pcap": {
             "bpf": "not (type mgt) and (host 192.168.1.1 or host 10.0.0.1)"
         },
         "logging": {
             "file": "/var/log/environet/analyzer-$(date +%Y%m%d).log"
         }
-    })";
+    })CFG";
     
     Config config = Config::from_json(config_with_special_chars);
     EXPECT_EQ(config.pcap.bpf, "not (type mgt) and (host 192.168.1.1 or host 10.0.0.1)");
@@ -283,11 +283,11 @@ TEST_F(ConfigTest, ConfigurationInheritance) {
     Config base_config = Config::get_defaults();
     
     // Create a partial override
-    std::string override_json = R"({
+    std::string override_json = R"CFG({
         "i2c": {
             "mock_mode": false
         }
-    })";
+    })CFG";
     
     Config override_config = Config::from_json(override_json);
     
@@ -302,7 +302,7 @@ TEST_F(ConfigTest, ConfigurationInheritance) {
 
 // Test configuration with nested objects
 TEST_F(ConfigTest, NestedObjects) {
-    std::string nested_config = R"({
+    std::string nested_config = R"CFG({
         "i2c": {
             "mock_mode": true,
             "advanced": {
@@ -310,7 +310,7 @@ TEST_F(ConfigTest, NestedObjects) {
                 "retry_count": 3
             }
         }
-    })";
+    })CFG";
     
     // Should handle unknown nested fields gracefully
     EXPECT_NO_THROW(Config::from_json(nested_config));
@@ -318,15 +318,12 @@ TEST_F(ConfigTest, NestedObjects) {
 
 // Test configuration performance
 TEST_F(ConfigTest, ConfigurationPerformance) {
-    std::string large_config = R"({
-        "i2c": {
-            "mock_mode": true
-        }
-    })";
-    
+    std::string large_config = R"CFG({
+        "i2c": { "mock_mode": true }
+    )CFG"; // leave JSON open for appending
     // Add many ping targets
     for (int i = 0; i < 1000; i++) {
-        large_config += R"(, "ping_target_)" + std::to_string(i) + R"(": "192.168.1.)" + std::to_string(i) + R"(")";
+        large_config += ", \"ping_target_" + std::to_string(i) + "\": \"192.168.1." + std::to_string(i) + "\"";
     }
     large_config += "}";
     
