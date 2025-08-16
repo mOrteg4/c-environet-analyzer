@@ -5,6 +5,9 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <errno.h>
+#include <cstring>
+#include <fstream>
 
 #include "core/log.hpp"
 #include "core/config.hpp"
@@ -26,6 +29,8 @@ void signal_handler(int signal) {
 // Forward declarations
 void setup_signal_handlers();
 void create_directories(const environet::core::Config& config);
+void mkdirs(const std::string& dir);
+bool write_default_config(const std::string& path, bool user_mode);
 void sensor_thread_func(std::shared_ptr<environet::sensors::ArduinoI2C> sensor,
                        std::shared_ptr<environet::correlate::Correlator> correlator,
                        const environet::core::Config& config);
@@ -44,9 +49,11 @@ int main(int argc, char* argv[]) {
         // Parse command line arguments
         std::string config_path = "config/config.json";
         bool mock_mode = true;
-        bool test_sensors = false;
+    bool test_sensors = false;
         bool test_network = false;
         bool test_pcap = false;
+    bool init_config = false;
+    std::string init_config_path;
         
         for (int i = 1; i < argc; i++) {
             std::string arg = argv[i];
@@ -62,6 +69,11 @@ int main(int argc, char* argv[]) {
                 test_network = true;
             } else if (arg == "--test-pcap") {
                 test_pcap = true;
+            } else if (arg == "--init-config") {
+                init_config = true;
+                if (i + 1 < argc && std::string(argv[i+1]).rfind("--", 0) != 0) {
+                    init_config_path = argv[++i];
+                }
             } else if (arg == "--help" || arg == "-h") {
                 std::cout << "EnviroNet Analyzer - C++ Implementation\n"
                           << "Usage: " << argv[0] << " [options]\n"
@@ -69,11 +81,23 @@ int main(int argc, char* argv[]) {
                           << "  --config <path>    Configuration file path\n"
                           << "  --mock             Enable mock mode (default)\n"
                           << "  --real             Enable real hardware mode\n"
+                          << "  --init-config [p]  Write a default config template to path p (default: config/config.json) and exit\n"
                           << "  --test-sensors     Test sensor functionality\n"
                           << "  --test-network     Test network functionality\n"
                           << "  --test-pcap        Test packet capture\n"
                           << "  --help, -h         Show this help message\n";
                 return 0;
+            }
+        }
+
+        if (init_config) {
+            std::string outPath = init_config_path.empty() ? std::string("config/config.json") : init_config_path;
+            if (write_default_config(outPath, /*user_mode=*/true)) {
+                std::cout << "Wrote default config template to: " << outPath << "\n";
+                return 0;
+            } else {
+                std::cerr << "Error: Failed to write default config to: " << outPath << "\n";
+                return 1;
             }
         }
         
@@ -94,18 +118,20 @@ int main(int argc, char* argv[]) {
             LOGI("Command line override: Real hardware mode enabled");
         }
         
-        // Initialize logging
-        LOGI("Initializing logging system");
-        environet::core::init_logger(config.logging.level, config.logging.file, 
-                                   config.logging.max_size_mb * 1024 * 1024, 
-                                   config.logging.max_files);
+    // Create necessary directories (before logging to avoid missing log dir)
+    create_directories(config);
+
+    // Initialize logging
+    LOGI("Initializing logging system");
+    environet::core::init_logger(config.logging.level, config.logging.file, 
+                   config.logging.max_size_mb * 1024 * 1024, 
+                   config.logging.max_files);
         
         LOGI("EnviroNet Analyzer starting up...");
         LOGI("Configuration: mock_i2c={}, wifi_scan_interval={}ms, pcap_bpf='{}'", 
              config.i2c.mock_mode, config.wifi.scan_interval_ms, config.pcap.bpf);
         
-        // Create necessary directories
-        create_directories(config);
+    // Directories already ensured above
         
         // Setup signal handlers for graceful shutdown
         setup_signal_handlers();
@@ -281,14 +307,62 @@ void create_directories(const environet::core::Config& config) {
     // Create log directory
     std::string log_dir = config.logging.file.substr(0, config.logging.file.find_last_of('/'));
     if (!log_dir.empty()) {
-        mkdir(log_dir.c_str(), 0755);
+        mkdirs(log_dir);
     }
     
     // Create findings directory
-    mkdir(config.correlator.findings_dir.c_str(), 0755);
+    mkdirs(config.correlator.findings_dir);
     
     // Create captures directory
-    mkdir(config.pcap.output_dir.c_str(), 0755);
+    mkdirs(config.pcap.output_dir);
+}
+
+void mkdirs(const std::string& dir) {
+    if (dir.empty()) return;
+    std::string path;
+    size_t start = 0;
+    // Handle absolute path
+    if (!dir.empty() && dir[0] == '/') {
+        path = "/";
+        start = 1;
+    }
+    while (start <= dir.size()) {
+        size_t pos = dir.find('/', start);
+        std::string part = dir.substr(start, pos == std::string::npos ? std::string::npos : pos - start);
+        if (!part.empty()) {
+            if (!path.empty() && path.back() != '/') path += '/';
+            path += part;
+            if (mkdir(path.c_str(), 0755) != 0 && errno != EEXIST) {
+                // continue even if mkdir fails for reasons other than exists
+            }
+        }
+        if (pos == std::string::npos) break;
+        start = pos + 1;
+    }
+}
+
+bool write_default_config(const std::string& path, bool user_mode) {
+    try {
+        auto cfg = environet::core::Config::get_defaults();
+        if (user_mode) {
+            // Prefer user-writable relative paths for logs and outputs
+            cfg.logging.file = "logs/environet/environet.log";
+            cfg.pcap.output_dir = "captures";
+            cfg.correlator.findings_dir = "findings";
+        }
+        // Ensure parent directories
+        std::string dir = path.substr(0, path.find_last_of('/'));
+        if (!dir.empty()) mkdirs(dir);
+        std::ofstream out(path);
+        if (!out.is_open()) return false;
+        out << cfg.to_json().dump(4) << std::endl;
+        out.close();
+        // Pre-create directories in the config for convenience
+        create_directories(cfg);
+        return true;
+    } catch (...) {
+        return false;
+    }
 }
 
 void sensor_thread_func(std::shared_ptr<environet::sensors::ArduinoI2C> sensor,

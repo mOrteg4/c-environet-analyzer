@@ -121,6 +121,8 @@ if(ENVIRONET_ENABLE_TESTS)
         spdlog::spdlog
         Threads::Threads
     )
+    # Propagate JSON headers explicitly for the test target (some toolchains miss INTERFACE includes)
+    target_include_directories(environet_tests PRIVATE ${json_SOURCE_DIR}/include)
 
     include(GoogleTest)
     gtest_discover_tests(environet_tests)
