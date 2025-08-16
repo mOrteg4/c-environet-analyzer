@@ -1,0 +1,38 @@
+{
+  "i2c": {
+    "mock_mode": true,
+    "bus_id": 1,
+    "addr": 16,
+    "sample_interval_ms": 100
+  },
+  "wifi": {
+    "iface_ap": "wlan1",
+    "iface_scan": "wlan0",
+    "scan_interval_ms": 5000,
+    "monitor_mode": false
+  },
+  "pcap": {
+    "bpf": "not (type mgt)",
+    "output_dir": "captures",
+    "max_file_size_mb": 100,
+    "max_files": 10
+  },
+  "correlator": {
+    "sensor_threshold": 200,
+    "window_ms": 5000,
+    "findings_dir": "findings"
+  },
+  "logging": {
+    "level": "info",
+    "file": "/var/log/environet/environet.log",
+    "console": true,
+    "max_size_mb": 5,
+    "max_files": 3
+  },
+  "metrics": {
+    "ping_targets": ["8.8.8.8", "1.1.1.1", "google.com"],
+    "iperf_server": "",
+    "ping_interval_ms": 10000,
+    "iperf_duration": 10
+  }
+}

@@ -1,128 +1,449 @@
-# EnviroNet Analyzer
+# EnviroNet Analyzer - C++ Implementation
 
-A Raspberry Pi-based system that correlates environmental factors with WiFi network performance, designed to demonstrate embedded Linux networking protocols and analysis with real-world, data-driven insight.
+A production-quality C++ implementation of the EnviroNet Analyzer, designed to correlate environmental factors with WiFi network performance. This project demonstrates low-level networking skills using libpcap, libnl/nl80211, and embedded device communications via I²C.
 
-## Project Overview
+## 🎯 Project Overview
 
 EnviroNet Analyzer combines ultrasonic and IR sensors to detect environmental changes, while continuously monitoring WiFi signal strength and network performance. This enables detailed analysis of how physical factors—like movement or object placement—affect wireless connectivity and reliability.
 
-**Key features:**
-- Environmental sensing (IR motion detection, ultrasonic distance measurement)
-- WiFi network scanning and signal strength monitoring (RSSI, SSID, BSSID, channel)
-- Network performance testing (ping, throughput, packet loss)
-- Correlation of environmental events with real-time network metrics
-- Rboust automated data logging with timestamped sensor and network events
-- Modular architecture with interchangeable real and mock hardware for development and testing
-- Configurable analysis scripts for visualization and post-processing
+**Key Features:**
+- **Environmental Sensing**: IR motion detection and ultrasonic distance measurement via Arduino I²C
+- **WiFi Network Analysis**: Real-time scanning using nl80211 with iw command fallback
+- **Packet Capture**: High-performance libpcap integration with BPF filtering
+- **Network Metrics**: Ping and iperf3 testing with automated correlation
+- **Event Correlation**: Time-windowed analysis linking sensor events to network changes
+- **Production Ready**: Systemd service, comprehensive logging, and monitoring integration
 
-## Hardware Requirements
+## 🏗️ Architecture
 
-- Raspberry Pi 4 Model B (8GB) running Ubuntu 22.04 LTS Server
-- PandaWireless AC1200 WiFi adapter (stable dual-band support)
-- SparkFun TinkerKit with:
-  - IR sensor
-  - Ultrasonic sensor
-  - Jumper wires and breadboard
+The system is built with a modular, multi-threaded architecture:
 
-## Installation
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Sensor Layer  │    │  Network Layer  │    │ Analysis Layer  │
+│                 │    │                 │    │                 │
+│ • Arduino I2C   │    │ • WiFi Scanner  │    │ • Correlator    │
+│ • Mock Generator│    │ • PCAP Capture  │    │ • Time Windows  │
+│ • CRC Validation│    │ • Network Tests │    │ • Event Finding │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │  Output Layer   │
+                    │                 │
+                    │ • JSONL Logs    │
+                    │ • PCAP Files    │
+                    │ • Systemd Logs  │
+                    │ • Prometheus    │
+                    └─────────────────┘
+```
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/yourusername/environet-analyzer.git
-   cd environet-analyzer
-   ```
+## 🚀 Quick Start
 
-2. Install dependencies:
-   ```bash
-   ./scripts/install_dependencies.sh
-   ```
+### Prerequisites
 
-3. Configure the system:
-   Edit `config.json` to match your hardware setup and preferences.
+- **OS**: Raspberry Pi OS, Ubuntu 20.04+, or Debian 11+
+- **Hardware**: Raspberry Pi 4 (8GB recommended), Panda AC1200 WiFi adapter
+- **Dependencies**: See [Installation](#installation) section
 
-## Usage
+### Quick Demo (Mock Mode)
 
-### Mock Testing Mode
-
-For development without physical sensors:
 ```bash
-# Set mock mode to true in config.json
-python main.py --test-sensors
+# Clone and setup
+git clone <your-repo>
+cd environet-analyzer
+chmod +x scripts/*.sh
+
+# Install dependencies
+./scripts/install_deps.sh
+
+# Build the project
+./scripts/build.sh --test
+
+# Run demo (no hardware required)
+cd examples
+./run_demo.sh --duration 30
 ```
 
-### Network Testing
+### Quick Test Commands
 
-Test PandaWireless adapter functionality:
 ```bash
-python main.py --test-network
+# Test sensors (mock mode)
+./build/environet --test-sensors
+
+# Test network scanning
+./build/environet --test-network
+
+# Test packet capture
+./build/environet --test-pcap
+
+# Full monitoring (mock mode)
+./build/environet --config config/config.json
 ```
 
-### Continuous Monitoring
+## 📦 Installation
 
-Start the environmental/network correlation monitor:
+### Automated Installation
+
 ```bash
-python main.py --monitor
+# Install all dependencies
+./scripts/install_deps.sh
+
+# Build and install
+./scripts/build.sh --install
+
+# Setup systemd service
+sudo systemctl enable environet
+sudo systemctl start environet
 ```
 
-### Run Full Analysis
+### Manual Installation
 
-Perform a one-time comprehensive analysis:
 ```bash
-python main.py --analyze
+# Install system dependencies
+sudo apt update
+sudo apt install -y build-essential cmake g++ clang-format clang-tidy git \
+  libpcap-dev libnl-3-dev libnl-genl-3-dev libgpiod-dev i2c-tools libi2c-dev \
+  iperf3 pkg-config libspdlog-dev libgtest-dev valgrind doxygen graphviz
+
+# Build from source
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo
+make -j$(nproc)
+sudo make install
 ```
 
-### Set Up as a Service
+## 🔧 Configuration
 
-For unattended, long-term operation:
+### Configuration File
+
+Create `/etc/environet/config.json` or use local `config/config.json`:
+
+```json
+{
+  "i2c": {
+    "mock_mode": true,
+    "bus_id": 1,
+    "addr": 16,
+    "sample_interval_ms": 100
+  },
+  "wifi": {
+    "iface_ap": "wlan1",
+    "iface_scan": "wlan0",
+    "scan_interval_ms": 5000,
+    "monitor_mode": false
+  },
+  "pcap": {
+    "bpf": "not (type mgt)",
+    "output_dir": "captures",
+    "max_file_size_mb": 100,
+    "max_files": 10
+  },
+  "correlator": {
+    "sensor_threshold": 200,
+    "window_ms": 5000,
+    "findings_dir": "findings"
+  },
+  "logging": {
+    "level": "info",
+    "file": "/var/log/environet/environet.log",
+    "console": true,
+    "max_size_mb": 5,
+    "max_files": 3
+  }
+}
+```
+
+### Hardware Configuration
+
+When ready for real hardware:
+
+1. **Set `mock_mode: false`** in configuration
+2. **Connect Arduino** via I²C with logic level shifter
+3. **Verify I2C bus**: `sudo i2cdetect -y 1`
+4. **Test communication**: `./environet --test-sensors`
+
+See [Hardware Setup](#hardware-setup) for detailed wiring instructions.
+
+## 🧪 Testing
+
+### Unit Tests
+
 ```bash
-./scripts/setup_service.sh
-sudo systemctl start environet-analyzer
+# Run all tests
+./scripts/build.sh --test
+
+# Run specific test suite
+cd build
+./environet_tests --gtest_filter=ArduinoI2CTest*
 ```
 
-## Project Structure
+### Integration Tests
 
-```
-environet-analyzer/
-├── main.py              # Main integration script
-├── config.json          # Configuration file
-├── README.md            # Project documentation
-├── sensors/             # Sensor modules
-│   ├── interface.py     # Common sensor interface
-│   ├── ir_mock.py       # IR sensor mock implementation
-│   └── ultrasonic_mock.py # Ultrasonic sensor mock
-├── network/             # Network modules
-│   ├── scanner.py       # WiFi network scanning
-│   └── performance.py   # Network performance testing
-├── scripts/             # Utility scripts
-│   ├── install_dependencies.sh
-│   ├── run_tests.sh
-│   ├── setup_panda_wifi.sh
-│   └── setup_service.sh
-├── tests/               # Unit tests
-│   ├── test_sensors.py
-│   └── test_network.py
-└── logs/                # Output logs (created at runtime)
+```bash
+# Test full pipeline
+cd examples
+./run_demo.sh --full --duration 60
+
+# Test individual components
+./run_demo.sh --sensors
+./run_demo.sh --network
+./run_demo.sh --pcap
 ```
 
-## Development Workflow
+### Performance Testing
 
-This project follows a modular approach:
+```bash
+# High-throughput packet capture test
+./build/environet --config test_configs/high_throughput.json
 
-1. Each hardware component has both real and mock implementations
-2. Core functionality is tested independently
-3. The main script integrates all modules for end-to-end operation
-4. Automated, timestamped logging enables correlation of sensor events and network performance for later analysis
-## Homelab Learning Outcomes
+# Memory usage monitoring
+valgrind --tool=massif ./build/environet --test-sensors
+```
 
-Building and operating this homelab will help you develop and reinforce skills in:
+## 🔌 Hardware Setup
 
-- **Embedded Linux:** Package management, service configuration, and automation scripting
-- **Networking:** WiFi configuration, signal monitoring, performance diagnostics, and driver integration
-- **Hardware Integration:** Sensor interfacing (GPIO/I2C), circuit prototyping, and robust error handling
-- **Software Engineering:** Modular design, test-driven development, and comprehensive logging strategies
-- **Automation:** Scripted setup, unattended operation, and systemd service integration
-- **Data Analysis:** Structured event logging, correlation analysis, and result visualization
+### Required Components
 
-## License
+| Component | Purpose | Notes |
+|-----------|---------|-------|
+| Raspberry Pi 4 | Main processing unit | 8GB recommended |
+| Panda AC1200 | WiFi access point | USB 3.0 dual-band |
+| Arduino Uno/Nano | Sensor interface | I²C slave device |
+| IR Sensor | Motion detection | Analog output |
+| Ultrasonic Sensor | Distance measurement | HC-SR04 compatible |
+| Logic Level Shifter | **REQUIRED** | 3.3V ↔ 5V conversion |
 
-This project is open source, licensed under the MIT License.
+### Wiring Diagram
+
+```
+Raspberry Pi 4    Logic Level Shifter    Arduino
+    3.3V ────────── LV (3.3V)
+   GPIO2 ────────── LV1 (SDA) ────────── A4
+   GPIO3 ────────── LV2 (SCL) ────────── A5
+     GND ────────── GND ──────────────── GND
+```
+
+**⚠️ CRITICAL**: Never connect 5V Arduino directly to 3.3V Pi!
+
+### Arduino Firmware
+
+Upload `examples/arduino/environet_sensor.ino` to your Arduino:
+
+```bash
+# Install Arduino IDE or use arduino-cli
+arduino-cli compile --fqbn arduino:avr:uno examples/arduino/environet_sensor.ino
+arduino-cli upload --fqbn arduino:avr:uno --port /dev/ttyUSB0
+```
+
+## 📊 Usage Examples
+
+### Basic Monitoring
+
+```bash
+# Start monitoring with default config
+./environet --config config/config.json
+
+# Monitor specific interface
+./environet --config config/config.json --interface wlan0
+
+# Verbose logging
+./environet --config config/config.json --log-level debug
+```
+
+### Data Collection
+
+```bash
+# Collect sensor data for 1 hour
+timeout 3600 ./environet --config config/config.json
+
+# Analyze collected data
+ls -la findings/
+cat findings/*.json | jq '.event_type' | sort | uniq -c
+```
+
+### Network Analysis
+
+```bash
+# WiFi scan only
+./environet --test-network
+
+# Packet capture analysis
+tcpdump -r captures/*.pcap | head -20
+
+# Performance metrics
+./environet --config config/config.json --metrics-only
+```
+
+## 🏭 Production Deployment
+
+### Systemd Service
+
+```bash
+# Install service
+sudo cp systemd/environet.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable environet
+sudo systemctl start environet
+
+# Check status
+sudo systemctl status environet
+sudo journalctl -u environet -f
+```
+
+### Log Management
+
+```bash
+# View logs
+sudo journalctl -u environet -f
+tail -f /var/log/environet/environet.log
+
+# Log rotation (handled automatically)
+ls -la /var/log/environet/
+```
+
+### Monitoring Integration
+
+```bash
+# Check system resources
+htop
+iotop
+iftop
+
+# Monitor findings
+watch -n 5 'ls -la findings/ | wc -l'
+```
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+| Problem | Solution |
+|---------|----------|
+| I2C devices not found | Enable I2C in `raspi-config` |
+| Permission denied | Run with sudo or add user to i2c group |
+| WiFi scan fails | Check interface permissions and driver support |
+| PCAP capture errors | Verify interface exists and has traffic |
+
+### Debug Commands
+
+```bash
+# Check I2C bus
+sudo i2cdetect -y 1
+
+# Test WiFi interface
+iw dev wlan0 scan | head -20
+
+# Verify packet capture
+sudo tcpdump -i wlan0 -c 10
+
+# Check system logs
+sudo journalctl -u environet --since "1 hour ago"
+```
+
+### Performance Tuning
+
+```bash
+# Increase file descriptor limits
+echo "* soft nofile 65536" | sudo tee -a /etc/security/limits.conf
+echo "* hard nofile 65536" | sudo tee -a /etc/security/limits.conf
+
+# Optimize network buffers
+echo 'net.core.rmem_max = 134217728' | sudo tee -a /etc/sysctl.conf
+echo 'net.core.wmem_max = 134217728' | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+```
+
+## 🚀 Development
+
+### Building from Source
+
+```bash
+# Development build with sanitizers
+BUILD_TYPE=Debug ./scripts/build.sh --clean --test
+
+# Release build
+BUILD_TYPE=Release ./scripts/build.sh --clean
+
+# Install to custom location
+INSTALL_DIR=/opt/environet ./scripts/build.sh --install
+```
+
+### Code Quality
+
+```bash
+# Format code
+find . -name "*.cpp" -o -name "*.hpp" | xargs clang-format -i
+
+# Static analysis
+clang-tidy src/*.cpp -- -I include/
+
+# Memory checking
+valgrind --tool=memcheck --leak-check=full ./build/environet --test-sensors
+```
+
+### Adding New Features
+
+1. **Create header** in `include/` directory
+2. **Implement source** in `src/` directory  
+3. **Add tests** in `tests/` directory
+4. **Update CMakeLists.txt** with new files
+5. **Document** with Doxygen comments
+
+## 📚 API Reference
+
+### Core Classes
+
+- **`environet::core::Config`**: Configuration management
+- **`environet::core::Logger`**: Structured logging system
+- **`environet::sensors::ArduinoI2C`**: I²C sensor communication
+- **`environet::net::WifiScan`**: WiFi network scanning
+- **`environet::net::PcapSniffer`**: Packet capture and analysis
+- **`environet::correlate::Correlator`**: Event correlation engine
+
+### Data Structures
+
+- **`SensorFrame`**: 16-byte packed sensor data with CRC
+- **`BssInfo`**: WiFi access point information
+- **`PacketMeta`**: Packet metadata and statistics
+- **`Finding`**: Correlated event results
+
+See `docs/` directory for detailed API documentation.
+
+## 🤝 Contributing
+
+1. **Fork** the repository
+2. **Create** feature branch: `git checkout -b feat/amazing-feature`
+3. **Commit** changes: `git commit -m 'Add amazing feature'`
+4. **Push** to branch: `git push origin feat/amazing-feature`
+5. **Open** Pull Request
+
+### Development Guidelines
+
+- Follow existing code style (clang-format enforced)
+- Add unit tests for new functionality
+- Update documentation for API changes
+- Ensure all tests pass before submitting
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **libpcap** for packet capture capabilities
+- **libnl** for netlink communication
+- **spdlog** for structured logging
+- **GoogleTest** for testing framework
+- **Arduino community** for sensor integration examples
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/yourusername/environet-analyzer/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/environet-analyzer/discussions)
+- **Documentation**: [Wiki](https://github.com/yourusername/environet-analyzer/wiki)
+
+---
+
+**Built with ❤️ for network analysis and environmental correlation**

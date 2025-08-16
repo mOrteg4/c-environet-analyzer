@@ -1,0 +1,70 @@
+digraph DataFlow {
+  rankdir=LR;
+  
+  // Graph settings
+  node [shape=box, style=filled, fillcolor=lightblue, fontname="Arial", fontsize=10];
+  edge [fontname="Arial", fontsize=9];
+  
+  // Data sources
+  Sensor [shape=box, label="Arduino (I2C) / Mock generator", fillcolor=lightgreen];
+  I2CReader [shape=box, label="ArduinoI2C (reader)\nCRC, Timestamp", fillcolor=lightyellow];
+  WifiScan [shape=box, label="WifiScan (nl80211)\nAP list + RSSI", fillcolor=lightyellow];
+  Pcap [shape=box, label="PcapSniffer\nPackets + Radiotap", fillcolor=lightyellow];
+  Correlator [shape=box, label="Correlator\nwindowed stats + findings", fillcolor=orange];
+  Metrics [shape=box, label="Metrics\nPing/Iperf", fillcolor=lightyellow];
+  Storage [shape=cylinder, label="Logs / JSONL / pcapng", fillcolor=lightcoral];
+  Dashboard [shape=box, label="TUI / Web UI / Prometheus", fillcolor=lightsteelblue];
+  
+  // Data flow
+  Sensor -> I2CReader [label="I2C frames\n16 bytes"];
+  I2CReader -> Correlator [label="SensorFrame\nvalidated"];
+  WifiScan -> Correlator [label="BssInfo\nRSSI changes"];
+  Pcap -> Correlator [label="PacketMeta\nlink layer stats"];
+  Metrics -> Correlator [label="PingStats\nIperfResults"];
+  Correlator -> Storage [label="Findings\nJSONL format"];
+  Correlator -> Dashboard [label="Real-time\nevents"];
+  
+  // Subgraphs for organization
+  subgraph cluster_sensors {
+    label="Sensor Layer";
+    style=filled;
+    fillcolor=lightgrey;
+    Sensor;
+    I2CReader;
+  }
+  
+  subgraph cluster_network {
+    label="Network Layer";
+    style=filled;
+    fillcolor=lightgrey;
+    WifiScan;
+    Pcap;
+    Metrics;
+  }
+  
+  subgraph cluster_analysis {
+    label="Analysis Layer";
+    style=filled;
+    fillcolor=lightgrey;
+    Correlator;
+  }
+  
+  subgraph cluster_output {
+    label="Output Layer";
+    style=filled;
+    fillcolor=lightgrey;
+    Storage;
+    Dashboard;
+  }
+  
+  // Additional detail nodes
+  Config [shape=note, label="Configuration\nJSON", fillcolor=lightcyan];
+  Config -> I2CReader [style=dashed];
+  Config -> WifiScan [style=dashed];
+  Config -> Pcap [style=dashed];
+  Config -> Correlator [style=dashed];
+  
+  // Time correlation
+  TimeWindow [shape=box, label="Time Window\n±5 seconds", fillcolor=lightpink];
+  Correlator -> TimeWindow [label="sliding window"];
+}

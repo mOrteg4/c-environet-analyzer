@@ -1,0 +1,58 @@
+graph Topology {
+  // Graph settings
+  node [shape=box, style=filled, fillcolor=lightblue, fontname="Arial", fontsize=10];
+  edge [fontname="Arial", fontsize=9];
+  
+  // Main components
+  Pi [label="Raspberry Pi 4 (wlan0)\neth0 optional\nC++ EnviroNet Analyzer", fillcolor=lightgreen];
+  Panda [label="Panda AC1200 (wlan1)\nhostapd AP\nDual-band WiFi", fillcolor=lightyellow];
+  Router [label="Home Router\nInternet Gateway\n192.168.1.1", fillcolor=lightcoral];
+  Arduino [label="SparkFun Tinkerkit\nI2C Slave (0x10)\nIR + Ultrasonic", fillcolor=lightsteelblue];
+  
+  // Network clients
+  Clients [label="Wi-Fi AP Clients\nMobile devices\nLaptops", fillcolor=lightcyan];
+  
+  // Physical connections
+  Pi -- Router [label="wlan0: upstream\nDHCP client\n192.168.1.x", style=bold];
+  Pi -- Panda [label="USB 3.0\nHigh-speed data", style=bold];
+  Panda -- Clients [label="Wi-Fi AP\n2.4GHz + 5GHz\nSSID: EnviroNet", style=bold];
+  Arduino -- Pi [label="I2C (mockable)\nSDA: GPIO2, SCL: GPIO3\n3.3V logic + level-shifter", style=bold];
+  
+  // Network interfaces
+  subgraph cluster_pi_networks {
+    label="Pi Network Interfaces";
+    style=filled;
+    fillcolor=lightgrey;
+    
+    Wlan0 [label="wlan0\nClient mode\n192.168.1.x", shape=ellipse];
+    Wlan1 [label="wlan1\nAP mode\n192.168.4.1", shape=ellipse];
+    Eth0 [label="eth0\nOptional\nWired connection", shape=ellipse];
+  }
+  
+  Pi -- Wlan0 [style=dashed];
+  Pi -- Wlan1 [style=dashed];
+  Pi -- Eth0 [style=dashed];
+  
+  // I2C bus details
+  subgraph cluster_i2c {
+    label="I2C Bus Details";
+    style=filled;
+    fillcolor=lightgrey;
+    
+    I2C_Bus [label="I2C-1\nSDA: GPIO2\nSCL: GPIO3\n3.3V", shape=ellipse];
+    Level_Shifter [label="Logic Level Shifter\n3.3V ↔ 5V\nBi-directional", shape=ellipse];
+    Arduino_Pins [label="Arduino Pins\nA4: SDA\nA5: SCL\n5V", shape=ellipse];
+  }
+  
+  I2C_Bus -- Level_Shifter [style=dashed];
+  Level_Shifter -- Arduino_Pins [style=dashed];
+  
+  // Power and ground
+  Power [label="Power Supply\n5V USB-C\n3A+ recommended", fillcolor=lightpink];
+  Power -- Pi [style=dashed];
+  Power -- Arduino [style=dashed];
+  
+  // Data flow indicators
+  Data_Flow [label="Data Flow:\nSensors → I2C → Pi → Analysis → Storage", fillcolor=orange, shape=note];
+  Pi -- Data_Flow [style=dashed];
+}
