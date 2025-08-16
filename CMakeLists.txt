@@ -117,11 +117,10 @@ target_link_libraries(environet_tests
     GTest::gtest
     GTest::gtest_main
     GTest::gmock
-    environet
 )
 
 # Set test properties
-set_tests_properties(EnvironetTests PROPERTIES
+set_tests_properties(environet_tests PROPERTIES
     TIMEOUT 300
     ENVIRONMENT "GTEST_COLOR=1"
 )
