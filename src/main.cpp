@@ -377,7 +377,7 @@ void metrics_thread_func(std::shared_ptr<environet::net::Metrics> metrics,
             // Run iperf3 test if server is configured
             if (!config.metrics.iperf_server.empty()) {
                 auto iperf_results = metrics->iperf3_test(config.metrics.iperf_server, 
-                                                        config.metrics.iperf_duration);
+                                                        config.metrics.iperf3_duration);
                 correlator->push_iperf3_results(iperf_results);
                 if (iperf_results.success) {
                     LOGD("iPerf3: {} Mbps", iperf_results.bandwidth_mbps);
