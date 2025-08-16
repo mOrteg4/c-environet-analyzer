@@ -190,7 +190,7 @@ int main(int argc, char* argv[]) {
         
         if (test_pcap) {
             LOGI("Running PCAP tests...");
-            bool pcap_started = pcap_sniffer->start([](const environet::net::PacketMeta& meta, const uint8_t* data) {
+            bool pcap_started = pcap_sniffer->start([correlator](const environet::net::PacketMeta& meta, const uint8_t* data) {
                 (void)data; // Suppress unused parameter warning
                 correlator->push_packet(meta);
                 LOGD("Packet: {} -> {}, {} bytes", meta.src_mac, meta.dst_mac, meta.length);
@@ -228,10 +228,7 @@ int main(int argc, char* argv[]) {
         // Stop components first
         pcap_sniffer->stop();
         
-        // Wait for threads to finish with timeout
-        const int shutdown_timeout_ms = 5000;
-        auto start_time = std::chrono::steady_clock::now();
-        
+        // Wait for threads to finish
         if (sensor_thread.joinable()) {
             // For std::thread, we can't timeout on join, so we just join
             // In a real application, you might want to use std::future with timeout
