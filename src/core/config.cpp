@@ -121,6 +121,8 @@ nlohmann::json Config::to_json() const {
         {"ping_targets", metrics.ping_targets},
         {"iperf_server", metrics.iperf_server},
         {"ping_interval_ms", metrics.ping_interval_ms},
+        // Write both keys for compatibility with tests and legacy configs
+        {"iperf3_duration", metrics.iperf3_duration},
         {"iperf_duration", metrics.iperf3_duration}
     };
     return j;

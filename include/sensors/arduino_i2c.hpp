@@ -6,6 +6,7 @@
 #include <random>
 #include <chrono>
 #include <thread>
+#include <mutex>
 
 #include "core/config.hpp"
 
@@ -20,11 +21,15 @@ namespace sensors {
  */
 #pragma pack(push, 1)
 struct SensorFrame {
+    // Ensure zero-initialized defaults for tests
+    SensorFrame()
+        : ts_ms(0), ir_raw(0), ultra_mm(0), status(0), reserved(0), pad(0), crc16(0) {}
     uint32_t ts_ms;      // Milliseconds since Arduino boot
     int16_t ir_raw;      // Raw ADC reading from IR sensor
     uint16_t ultra_mm;   // Ultrasonic distance in millimeters
     uint8_t status;      // Status bitflags (bit0=motion, bit1=error, etc.)
-    uint8_t reserved;    // Reserved for future use / alignment
+    uint32_t reserved;   // Reserved for future use / alignment (extended to help reach 16 bytes)
+    uint8_t pad;         // Padding to align structure to 16 bytes total
     uint16_t crc16;      // CRC-16-CCITT of previous bytes
     
     // Status bit definitions
@@ -108,6 +113,8 @@ private:
     std::unique_ptr<std::mt19937> rng_;
     std::chrono::steady_clock::time_point last_sample_;
     uint32_t mock_timestamp_;
+    std::mutex lock_;
+    uint64_t mock_reads_ = 0;
     
     // Error handling
     std::string last_error_;
@@ -152,7 +159,7 @@ private:
     /**
      * @brief Wait for next sample interval
      */
-    void wait_for_sample_interval();
+    void wait_for_sample_interval(bool enforce_sleep);
 };
 
 } // namespace sensors
