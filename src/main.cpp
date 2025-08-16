@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
         // Initialize components
         LOGI("Initializing components...");
         
-        auto sensor = std::make_shared<environet::sensors::ArduinoI2C>(config_path);
+    auto sensor = std::make_shared<environet::sensors::ArduinoI2C>(config);
         if (!sensor->init()) {
             LOGE("Failed to initialize sensor: {}", sensor->get_last_error());
             return 1;

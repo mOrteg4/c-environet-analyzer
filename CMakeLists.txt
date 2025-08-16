@@ -54,6 +54,12 @@ FetchContent_MakeAvailable(json)
 set(SOURCES
     src/main.cpp
     src/core/log.cpp
+    src/core/config.cpp
+    src/sensors/arduino_i2c.cpp
+    src/net/wifi_scan.cpp
+    src/net/pcap_sniffer.cpp
+    src/net/metrics.cpp
+    src/correlate/correlator.cpp
 )
 
 # Header files

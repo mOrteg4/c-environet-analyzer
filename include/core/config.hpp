@@ -51,10 +51,10 @@ public:
     };
 
     struct MetricsConfig {
-        std::vector<std::string> ping_targets = {"8.8.8.8", "1.1.1.1"};
+        std::vector<std::string> ping_targets = {"8.8.8.8", "1.1.1.1", "google.com"};
         std::string iperf_server = "";       // iperf3 server (optional)
         int ping_interval_ms = 10000;        // Ping interval in milliseconds
-        int iperf_duration = 10;             // iperf3 test duration in seconds
+        int iperf3_duration = 10;            // iperf3 test duration in seconds
     };
 
     // Configuration sections

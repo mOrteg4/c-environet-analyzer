@@ -7,6 +7,8 @@
 #include <chrono>
 #include <thread>
 
+#include "core/config.hpp"
+
 namespace environet {
 namespace sensors {
 
@@ -41,9 +43,12 @@ struct SensorFrame {
 class ArduinoI2C {
 public:
     /**
-     * @brief Constructor
-     * 
-     * @param config Configuration object
+     * @brief Construct from loaded Config
+     */
+    explicit ArduinoI2C(const environet::core::Config& cfg);
+
+    /**
+     * @brief Construct from a config file path (loads internally)
      */
     explicit ArduinoI2C(const std::string& config_path);
     
