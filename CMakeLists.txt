@@ -119,17 +119,17 @@ target_link_libraries(environet_tests
     GTest::gmock
 )
 
-# Set test properties
-set_tests_properties(environet_tests PROPERTIES
-    TIMEOUT 300
-    ENVIRONMENT "GTEST_COLOR=1"
-)
-
 # Add individual test suites
 add_test(NAME SensorTests COMMAND environet_tests --gtest_filter="*Sensor*")
 add_test(NAME ConfigTests COMMAND environet_tests --gtest_filter="*Config*")
 add_test(NAME TimeTests COMMAND environet_tests --gtest_filter="*Time*")
 add_test(NAME IntegrationTests COMMAND environet_tests --gtest_filter="*Integration*")
+
+# Set test properties (after tests are created)
+set_tests_properties(SensorTests ConfigTests TimeTests IntegrationTests PROPERTIES
+    TIMEOUT 300
+    ENVIRONMENT "GTEST_COLOR=1"
+)
 
 # Add test discovery
 include(GoogleTest)
