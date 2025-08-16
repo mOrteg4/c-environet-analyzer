@@ -6,6 +6,13 @@
 #include <cstring>
 #include <fcntl.h>
 #include <unistd.h>
+#include <cerrno>
+#include <system_error>
+
+#ifdef __linux__
+#include <sys/ioctl.h>
+#include <linux/i2c-dev.h>
+#endif
 
 namespace environet {
 namespace sensors {
@@ -47,9 +54,33 @@ bool ArduinoI2C::init() {
 }
 
 bool ArduinoI2C::init_real_i2c() {
-    // Minimal stub for now; real implementation requires linux/i2c-dev/ioctl
-    set_error("Real I2C mode not implemented yet in this build");
+    // Real I2C implementation for Linux (Raspberry Pi)
+#ifndef __linux__
+    set_error("Real I2C supported only on Linux builds");
     return false;
+#else
+    // Build device path from bus id (e.g., /dev/i2c-1)
+    char devpath[64];
+    std::snprintf(devpath, sizeof(devpath), "/dev/i2c-%d", bus_id_);
+
+    // Open I2C bus
+    fd_ = ::open(devpath, O_RDONLY | O_CLOEXEC);
+    if (fd_ < 0) {
+        set_error(std::string("Failed to open ") + devpath + ": " + std::strerror(errno));
+        return false;
+    }
+
+    // Set slave address
+    if (ioctl(fd_, I2C_SLAVE, addr_) < 0) {
+        set_error(std::string("ioctl(I2C_SLAVE) failed for address ") + std::to_string(addr_) + ": " + std::strerror(errno));
+        ::close(fd_);
+        fd_ = -1;
+        return false;
+    }
+
+    last_sample_ = std::chrono::steady_clock::now();
+    return true;
+#endif
 }
 
 bool ArduinoI2C::init_mock_i2c() {
@@ -69,10 +100,70 @@ bool ArduinoI2C::read_frame(SensorFrame& frame) {
 }
 
 bool ArduinoI2C::read_frame_real(SensorFrame& frame) {
+    // Enforce sampling cadence similar to mock
+    wait_for_sample_interval();
+
+#ifndef __linux__
     (void)frame;
-    // Not implemented yet
-    set_error("read_frame_real not implemented");
+    set_error("Real I2C supported only on Linux builds");
     return false;
+#else
+    if (fd_ < 0) {
+        set_error("I2C device not initialized");
+        return false;
+    }
+
+    uint8_t* buf = reinterpret_cast<uint8_t*>(&frame);
+    const size_t want = sizeof(SensorFrame);
+
+    // Read loop to ensure full frame is received
+    size_t got = 0;
+    int attempts = 0;
+    while (got < want) {
+        ssize_t n = ::read(fd_, buf + got, want - got);
+        if (n < 0) {
+            if (errno == EINTR) {
+                continue; // retry interrupted read
+            }
+            // On EAGAIN/ETIMEDOUT allow a few retries
+            if ((errno == EAGAIN || errno == EIO || errno == ETIMEDOUT) && attempts++ < 3) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                continue;
+            }
+            set_error(std::string("I2C read failed: ") + std::strerror(errno));
+            return false;
+        }
+        if (n == 0) {
+            // Unexpected EOF; retry a few times
+            if (attempts++ < 2) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
+                continue;
+            }
+            set_error("I2C read returned 0 bytes (EOF)");
+            return false;
+        }
+        got += static_cast<size_t>(n);
+    }
+
+    // Validate CRC
+    if (!validate_crc16(frame)) {
+        // One immediate retry in case we were mid-frame
+        attempts = 0;
+        got = 0;
+        while (got < want && attempts++ < 2) {
+            ssize_t n = ::read(fd_, buf + got, want - got);
+            if (n <= 0) break;
+            got += static_cast<size_t>(n);
+        }
+        if (got == want && validate_crc16(frame)) {
+            return true;
+        }
+        set_error("CRC check failed on sensor frame");
+        return false;
+    }
+
+    return true;
+#endif
 }
 
 void ArduinoI2C::stop() {

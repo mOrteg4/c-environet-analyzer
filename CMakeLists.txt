@@ -96,8 +96,29 @@ target_compile_options(environet PRIVATE
     $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>
 )
 
-# Enable testing
-# enable_testing()
+option(ENVIRONET_ENABLE_TESTS "Enable building tests" OFF)
+if(ENVIRONET_ENABLE_TESTS)
+    enable_testing()
+    find_package(GTest REQUIRED)
+
+    set(TEST_SOURCES
+        tests/test_main.cpp
+        tests/test_sensors.cpp
+        tests/test_config.cpp
+        tests/test_time.cpp
+    )
+
+    add_executable(environet_tests ${TEST_SOURCES})
+    target_link_libraries(environet_tests
+        GTest::gtest
+        GTest::gtest_main
+        GTest::gmock
+        Threads::Threads
+    )
+
+    include(GoogleTest)
+    gtest_discover_tests(environet_tests)
+endif()
 
 # Find GTest
 # find_package(GTest REQUIRED)
@@ -168,5 +189,9 @@ install(CODE "
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "Testing enabled: NO (test files not yet implemented)")
+if(ENVIRONET_ENABLE_TESTS)
+    message(STATUS "Testing enabled: YES")
+else()
+    message(STATUS "Testing enabled: NO (set -DENVIRONET_ENABLE_TESTS=ON to enable)")
+endif()
 message(STATUS "Source files: ${SOURCES}")
