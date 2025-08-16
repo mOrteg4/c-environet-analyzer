@@ -53,6 +53,7 @@ FetchContent_MakeAvailable(json)
 # Source files (only include files that actually exist)
 set(SOURCES
     src/main.cpp
+    src/core/log.cpp
 )
 
 # Header files
