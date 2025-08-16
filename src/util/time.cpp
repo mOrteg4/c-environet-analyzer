@@ -47,7 +47,7 @@ std::string Time::format_iso8601(uint64_t timestamp_ms) {
 #else
     gmtime_r(&t, &tm);
 #endif
-    char buf[32];
+    char buf[64];
     // Include milliseconds to match expected length 24: YYYY-MM-DDTHH:MM:SS.mmmZ
     unsigned ms_part = static_cast<unsigned>(timestamp_ms % 1000ULL);
     std::snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02d.%03uZ",
