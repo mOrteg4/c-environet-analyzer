@@ -53,9 +53,8 @@ FetchContent_MakeAvailable(json)
 # Ensure JSON headers are visible to all targets (including tests)
 include_directories(${json_SOURCE_DIR}/include)
 
-# Source files (only include files that actually exist)
-set(SOURCES
-    src/main.cpp
+# Core source files (exclude app main; used by both app and tests)
+set(CORE_SOURCES
     src/core/log.cpp
     src/core/config.cpp
     src/sensors/arduino_i2c.cpp
@@ -63,6 +62,7 @@ set(SOURCES
     src/net/pcap_sniffer.cpp
     src/net/metrics.cpp
     src/correlate/correlator.cpp
+    src/util/time.cpp
 )
 
 # Header files
@@ -77,11 +77,11 @@ set(HEADERS
     include/util/time.hpp
 )
 
-# Create main executable
-add_executable(environet ${SOURCES} ${HEADERS})
+# Build core library to share code between app and tests
+add_library(environet_core ${CORE_SOURCES} ${HEADERS})
 
-# Link libraries
-target_link_libraries(environet
+# Link libraries for core
+target_link_libraries(environet_core PUBLIC
     Threads::Threads
     spdlog::spdlog
     nlohmann_json::nlohmann_json
@@ -93,7 +93,17 @@ target_link_libraries(environet
     m
 )
 
-# Compiler-specific flags
+target_compile_options(environet_core PRIVATE
+    $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>
+    $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>
+)
+
+# Create main executable (only main.cpp here) and link core
+add_executable(environet src/main.cpp)
+target_link_libraries(environet environet_core)
+
+# Link libraries
+# Compiler-specific flags for the app (keep warnings)
 target_compile_options(environet PRIVATE
     $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>
     $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>
@@ -111,12 +121,13 @@ if(ENVIRONET_ENABLE_TESTS)
         tests/test_time.cpp
     )
 
-    # Build tests along with production sources so the implementations are available
-    add_executable(environet_tests ${TEST_SOURCES} ${SOURCES} ${HEADERS})
+    # Tests only include test sources and link against the core library
+    add_executable(environet_tests ${TEST_SOURCES})
     target_link_libraries(environet_tests
         GTest::gtest
         GTest::gtest_main
         GTest::gmock
+        environet_core
         nlohmann_json::nlohmann_json
         spdlog::spdlog
         Threads::Threads
@@ -202,4 +213,4 @@ if(ENVIRONET_ENABLE_TESTS)
 else()
     message(STATUS "Testing enabled: NO (set -DENVIRONET_ENABLE_TESTS=ON to enable)")
 endif()
-message(STATUS "Source files: ${SOURCES}")
+message(STATUS "Core source files: ${CORE_SOURCES}")

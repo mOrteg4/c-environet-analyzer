@@ -200,7 +200,7 @@ TEST_F(TimeTest, EdgeCases) {
     EXPECT_EQ(Time::us_to_ms(0), 0);
     
     // Test very large values
-    uint64_t large_ms = 86400000 * 365; // 1 year in ms
+    uint64_t large_ms = 86400000ULL * 365ULL; // 1 year in ms
     EXPECT_DOUBLE_EQ(Time::ms_to_seconds(large_ms), 86400.0 * 365);
     EXPECT_EQ(Time::seconds_to_ms(86400.0 * 365), large_ms);
     
