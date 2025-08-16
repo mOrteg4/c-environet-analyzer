@@ -102,7 +102,7 @@ nlohmann::json Metrics::get_stats() const {
     return j;
 }
 
-Metrics::PingStats Metrics::parse_ping_output(const std::string& output, const std::string& target) {
+PingStats Metrics::parse_ping_output(const std::string& output, const std::string& target) {
     PingStats ps; ps.target = target; ps.timestamp_ms = get_current_time_ms();
 
     // Packets: "X packets transmitted, Y received, Z% packet loss"
@@ -128,7 +128,7 @@ Metrics::PingStats Metrics::parse_ping_output(const std::string& output, const s
     return ps;
 }
 
-Metrics::Iperf3Results Metrics::parse_iperf3_output(const std::string& output, const std::string& server) {
+Iperf3Results Metrics::parse_iperf3_output(const std::string& output, const std::string& server) {
     Iperf3Results r; r.server = server; r.timestamp_ms = get_current_time_ms();
 
     try {
@@ -215,7 +215,14 @@ bool Metrics::check_iperf3_available() {
 #if defined(_WIN32)
     return false;
 #else
-    std::string out = execute_command("command -v iperf3 2>&1");
+    // Use a direct popen here since this is a static context
+    std::array<char, 128> buf{};
+    std::string out;
+    FILE* pipe = popen("command -v iperf3 2>&1", "r");
+    if (pipe) {
+        while (fgets(buf.data(), static_cast<int>(buf.size()), pipe) != nullptr) out.append(buf.data());
+        pclose(pipe);
+    }
     return !out.empty();
 #endif
 }
@@ -224,7 +231,13 @@ bool Metrics::check_ping_available() {
 #if defined(_WIN32)
     return false;
 #else
-    std::string out = execute_command("command -v ping 2>&1");
+    std::array<char, 128> buf{};
+    std::string out;
+    FILE* pipe = popen("command -v ping 2>&1", "r");
+    if (pipe) {
+        while (fgets(buf.data(), static_cast<int>(buf.size()), pipe) != nullptr) out.append(buf.data());
+        pclose(pipe);
+    }
     return !out.empty();
 #endif
 }

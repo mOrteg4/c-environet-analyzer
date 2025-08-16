@@ -9,18 +9,11 @@
 #include <functional>
 #include <nlohmann/json.hpp>
 
-// Forward declarations
-namespace environet {
-namespace sensors {
-    struct SensorFrame;
-}
-namespace net {
-    struct BssInfo;
-    struct PacketMeta;
-    struct PingStats;
-    struct Iperf3Results;
-}
-}
+// Include concrete types used in templates
+#include "sensors/arduino_i2c.hpp"   // SensorFrame
+#include "net/wifi_scan.hpp"         // BssInfo
+#include "net/pcap_sniffer.hpp"      // PacketMeta
+#include "net/metrics.hpp"           // PingStats, Iperf3Results
 
 namespace environet {
 namespace correlate {
