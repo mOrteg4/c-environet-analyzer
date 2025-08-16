@@ -50,6 +50,9 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
+# Ensure JSON headers are visible to all targets (including tests)
+include_directories(${json_SOURCE_DIR}/include)
+
 # Source files (only include files that actually exist)
 set(SOURCES
     src/main.cpp
@@ -108,11 +111,14 @@ if(ENVIRONET_ENABLE_TESTS)
         tests/test_time.cpp
     )
 
-    add_executable(environet_tests ${TEST_SOURCES})
+    # Build tests along with production sources so the implementations are available
+    add_executable(environet_tests ${TEST_SOURCES} ${SOURCES} ${HEADERS})
     target_link_libraries(environet_tests
         GTest::gtest
         GTest::gtest_main
         GTest::gmock
+        nlohmann_json::nlohmann_json
+        spdlog::spdlog
         Threads::Threads
     )
 
