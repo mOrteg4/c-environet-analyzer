@@ -1,0 +1,39 @@
+[Unit]
+Description=EnviroNet Analyzer - Environmental and Network Correlation Service
+Documentation=https://github.com/yourusername/environet-analyzer
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/environet-analyzer
+ExecStart=/usr/local/bin/environet --config /etc/environet/config.json
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=environet
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/environet /home/pi/environet-analyzer/findings /home/pi/environet-analyzer/captures
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Environment variables
+Environment=ENVIRONET_CONFIG=/etc/environet/config.json
+Environment=ENVIRONET_LOG_LEVEL=info
+
+[Install]
+WantedBy=multi-user.target

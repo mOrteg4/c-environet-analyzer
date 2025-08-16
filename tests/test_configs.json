@@ -1,0 +1,284 @@
+{
+  "test_scenarios": {
+    "unit_tests": {
+      "description": "Basic unit tests for all components",
+      "timeout": 60,
+      "filters": ["*"],
+      "repeat": 1,
+      "memory_check": false,
+      "performance_check": false
+    },
+    "sensor_tests": {
+      "description": "Comprehensive sensor testing including mock mode",
+      "timeout": 120,
+      "filters": ["*Sensor*"],
+      "repeat": 3,
+      "memory_check": true,
+      "performance_check": true,
+      "config_overrides": {
+        "i2c": {
+          "mock_mode": true,
+          "sample_interval_ms": 50
+        }
+      }
+    },
+    "config_tests": {
+      "description": "Configuration loading, validation, and edge cases",
+      "timeout": 90,
+      "filters": ["*Config*"],
+      "repeat": 2,
+      "memory_check": true,
+      "performance_check": false
+    },
+    "time_tests": {
+      "description": "Time utility functions and edge cases",
+      "timeout": 60,
+      "filters": ["*Time*"],
+      "repeat": 5,
+      "memory_check": false,
+      "performance_check": true
+    },
+    "integration_tests": {
+      "description": "Full system integration tests",
+      "timeout": 300,
+      "filters": ["*Integration*"],
+      "repeat": 1,
+      "memory_check": true,
+      "performance_check": true,
+      "config_overrides": {
+        "i2c": {
+          "mock_mode": true
+        },
+        "wifi": {
+          "scan_interval_ms": 1000
+        },
+        "pcap": {
+          "max_file_size_mb": 10
+        }
+      }
+    },
+    "mock_mode_tests": {
+      "description": "Mock mode functionality tests",
+      "timeout": 180,
+      "filters": ["*Mock*"],
+      "repeat": 2,
+      "memory_check": true,
+      "performance_check": true,
+      "config_overrides": {
+        "i2c": {
+          "mock_mode": true,
+          "sample_interval_ms": 100
+        },
+        "wifi": {
+          "scan_interval_ms": 2000
+        }
+      }
+    },
+    "performance_tests": {
+      "description": "Performance and load testing",
+      "timeout": 600,
+      "filters": ["*Performance*"],
+      "repeat": 10,
+      "memory_check": true,
+      "performance_check": true,
+      "config_overrides": {
+        "i2c": {
+          "mock_mode": true,
+          "sample_interval_ms": 10
+        },
+        "wifi": {
+          "scan_interval_ms": 500
+        }
+      }
+    },
+    "stress_tests": {
+      "description": "Stress testing under high load",
+      "timeout": 900,
+      "filters": ["*Stress*"],
+      "repeat": 20,
+      "memory_check": true,
+      "performance_check": true,
+      "config_overrides": {
+        "i2c": {
+          "mock_mode": true,
+          "sample_interval_ms": 5
+        },
+        "wifi": {
+          "scan_interval_ms": 100
+        },
+        "pcap": {
+          "max_file_size_mb": 1
+        }
+      }
+    },
+    "edge_case_tests": {
+      "description": "Edge case and boundary condition testing",
+      "timeout": 120,
+      "filters": ["*Edge*"],
+      "repeat": 3,
+      "memory_check": true,
+      "performance_check": false
+    },
+    "memory_tests": {
+      "description": "Memory leak and allocation testing",
+      "timeout": 300,
+      "filters": ["*"],
+      "repeat": 1,
+      "memory_check": true,
+      "performance_check": false,
+      "valgrind_options": {
+        "tool": "memcheck",
+        "leak_check": "full",
+        "show_leak_kinds": "all",
+        "track_origins": "yes",
+        "verbose": true
+      }
+    },
+    "thread_safety_tests": {
+      "description": "Multi-threading and thread safety testing",
+      "timeout": 180,
+      "filters": ["*Thread*"],
+      "repeat": 5,
+      "memory_check": true,
+      "performance_check": true,
+      "config_overrides": {
+        "i2c": {
+          "mock_mode": true,
+          "sample_interval_ms": 50
+        }
+      }
+    },
+    "error_handling_tests": {
+      "description": "Error condition and recovery testing",
+      "timeout": 90,
+      "filters": ["*Error*"],
+      "repeat": 2,
+      "memory_check": true,
+      "performance_check": false
+    },
+    "file_io_tests": {
+      "description": "File I/O and persistence testing",
+      "timeout": 120,
+      "filters": ["*File*"],
+      "repeat": 2,
+      "memory_check": true,
+      "performance_check": true
+    },
+    "network_tests": {
+      "description": "Network functionality testing (mock mode)",
+      "timeout": 150,
+      "filters": ["*Network*"],
+      "repeat": 2,
+      "memory_check": true,
+      "performance_check": true,
+      "config_overrides": {
+        "wifi": {
+          "scan_interval_ms": 1000
+        },
+        "metrics": {
+          "ping_targets": ["127.0.0.1", "localhost"]
+        }
+      }
+    },
+    "correlation_tests": {
+      "description": "Data correlation engine testing",
+      "timeout": 200,
+      "filters": ["*Correlation*"],
+      "repeat": 3,
+      "memory_check": true,
+      "performance_check": true,
+      "config_overrides": {
+        "correlator": {
+          "sensor_threshold": 100,
+          "window_ms": 2000
+        }
+      }
+    },
+    "rapid_test": {
+      "description": "Quick test for development",
+      "timeout": 30,
+      "filters": ["*Basic*"],
+      "repeat": 1,
+      "memory_check": false,
+      "performance_check": false
+    },
+    "full_test_suite": {
+      "description": "Complete test suite for CI/CD",
+      "timeout": 1800,
+      "filters": ["*"],
+      "repeat": 1,
+      "memory_check": true,
+      "performance_check": true,
+      "config_overrides": {
+        "i2c": {
+          "mock_mode": true
+        },
+        "logging": {
+          "level": "warn"
+        }
+      }
+    }
+  },
+  "test_environment": {
+    "default_timeout": 300,
+    "default_repeat": 1,
+    "default_memory_check": true,
+    "default_performance_check": true,
+    "output_formats": ["xml", "json", "junit"],
+    "coverage_enabled": true,
+    "parallel_tests": false,
+    "test_data_dir": "test_data",
+    "cleanup_after_tests": true
+  },
+  "mock_data": {
+    "sensor_frames": {
+      "normal": {
+        "ir_raw": [-100, 100],
+        "ultra_mm": [50, 3000],
+        "status": [0, 15]
+      },
+      "edge_cases": {
+        "ir_raw": [-512, 511, 0],
+        "ultra_mm": [0, 4000, 65535],
+        "status": [0, 255]
+      }
+    },
+    "network_data": {
+      "bss_list": [
+        {
+          "ssid": "TestNetwork1",
+          "bssid": "00:11:22:33:44:55",
+          "freq": 2412,
+          "signal_mbm": -5000
+        },
+        {
+          "ssid": "TestNetwork2",
+          "bssid": "AA:BB:CC:DD:EE:FF",
+          "freq": 5180,
+          "signal_mbm": -3000
+        }
+      ],
+      "ping_targets": ["127.0.0.1", "localhost", "8.8.8.8"]
+    }
+  },
+  "validation_rules": {
+    "sensor_data": {
+      "ir_raw_range": [-512, 511],
+      "ultra_mm_range": [0, 4000],
+      "status_valid_bits": [0, 1, 2, 3, 4, 5, 6, 7],
+      "crc_validation": true,
+      "timestamp_monotonic": true
+    },
+    "network_data": {
+      "bssid_format": "^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+      "freq_range": [2412, 2484, 5170, 5825],
+      "signal_range": [-9000, -2000]
+    },
+    "performance_metrics": {
+      "max_memory_usage_mb": 100,
+      "max_cpu_usage_percent": 80,
+      "max_response_time_ms": 1000,
+      "min_throughput_fps": 10
+    }
+  }
+}
