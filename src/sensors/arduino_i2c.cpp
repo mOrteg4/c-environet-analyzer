@@ -102,7 +102,7 @@ bool ArduinoI2C::read_frame(SensorFrame& frame) {
 
 bool ArduinoI2C::read_frame_real(SensorFrame& frame) {
     // Enforce sampling cadence similar to mock
-    wait_for_sample_interval();
+    wait_for_sample_interval(true);
 
 #ifndef __linux__
     (void)frame;

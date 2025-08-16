@@ -26,7 +26,7 @@ TEST(HeaderTest, AllHeadersCompile) {
 }
 
 // Test configuration loading and validation
-TEST(ConfigTest, DefaultConfig) {
+TEST(ConfigSmoke, DefaultConfig) {
     // Test default configuration values
     EXPECT_TRUE(true);
 }
@@ -56,13 +56,13 @@ TEST(MetricsTest, PingAndIperf) {
 }
 
 // Test correlation engine
-TEST(CorrelationTest, EventCorrelation) {
+TEST(CorrelationSmoke, EventCorrelation) {
     // Test correlation between sensor and network events
     EXPECT_TRUE(true);
 }
 
 // Test time utilities
-TEST(TimeTest, TimeOperations) {
+TEST(TimeSmoke, TimeOperations) {
     // Test time conversion and formatting
     EXPECT_TRUE(true);
 }
