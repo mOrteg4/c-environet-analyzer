@@ -5,6 +5,7 @@
 #include <memory>
 #include <thread>
 #include <atomic>
+#include <vector>
 #include <pcap.h>
 #include <nlohmann/json.hpp>
 
@@ -113,6 +114,9 @@ private:
     pcap_t* pcap_handle_;
     pcap_dumper_t* pcap_dumper_;
     std::string current_pcap_file_;
+    std::vector<std::string> file_history_;
+    std::atomic<int> file_index_{0};
+    int datalink_ = -1;
     
     // Capture state
     std::atomic<bool> running_;
