@@ -191,7 +191,9 @@ int main(int argc, char* argv[]) {
         if (test_pcap) {
             LOGI("Running PCAP tests...");
             bool pcap_started = pcap_sniffer->start([](const environet::net::PacketMeta& meta, const uint8_t* data) {
-                LOGI("Captured packet: {} -> {}, {} bytes", meta.src_mac, meta.dst_mac, meta.length);
+                (void)data; // Suppress unused parameter warning
+                correlator->push_packet(meta);
+                LOGD("Packet: {} -> {}, {} bytes", meta.src_mac, meta.dst_mac, meta.length);
             });
             
             if (pcap_started) {
@@ -231,43 +233,30 @@ int main(int argc, char* argv[]) {
         auto start_time = std::chrono::steady_clock::now();
         
         if (sensor_thread.joinable()) {
-            if (sensor_thread.join_for(std::chrono::milliseconds(shutdown_timeout_ms))) {
-                LOGI("Sensor thread joined successfully");
-            } else {
-                LOGW("Sensor thread did not join within timeout");
-            }
+            // For std::thread, we can't timeout on join, so we just join
+            // In a real application, you might want to use std::future with timeout
+            sensor_thread.join();
+            LOGI("Sensor thread joined successfully");
         }
         
         if (wifi_thread.joinable()) {
-            if (wifi_thread.join_for(std::chrono::milliseconds(shutdown_timeout_ms))) {
-                LOGI("WiFi thread joined successfully");
-            } else {
-                LOGW("WiFi thread did not join within timeout");
-            }
+            wifi_thread.join();
+            LOGI("WiFi thread joined successfully");
         }
         
         if (pcap_thread.joinable()) {
-            if (pcap_thread.join_for(std::chrono::milliseconds(shutdown_timeout_ms))) {
-                LOGI("PCAP thread joined successfully");
-            } else {
-                LOGW("PCAP thread did not join within timeout");
-            }
+            pcap_thread.join();
+            LOGI("PCAP thread joined successfully");
         }
         
         if (metrics_thread.joinable()) {
-            if (metrics_thread.join_for(std::chrono::milliseconds(shutdown_timeout_ms))) {
-                LOGI("Metrics thread joined successfully");
-            } else {
-                LOGW("Metrics thread did not join within timeout");
-            }
+            metrics_thread.join();
+            LOGI("Metrics thread joined successfully");
         }
         
         if (correlation_thread.joinable()) {
-            if (correlation_thread.join_for(std::chrono::milliseconds(shutdown_timeout_ms))) {
-                LOGI("Correlation thread joined successfully");
-            } else {
-                LOGW("Correlation thread did not join within timeout");
-            }
+            correlation_thread.join();
+            LOGI("Correlation thread joined successfully");
         }
         
         // Cleanup
@@ -355,6 +344,7 @@ void pcap_thread_func(std::shared_ptr<environet::net::PcapSniffer> pcap_sniffer,
     LOGI("PCAP thread started");
     
     bool started = pcap_sniffer->start([correlator](const environet::net::PacketMeta& meta, const uint8_t* data) {
+        (void)data; // Suppress unused parameter warning
         correlator->push_packet(meta);
         LOGD("Packet: {} -> {}, {} bytes", meta.src_mac, meta.dst_mac, meta.length);
     });
@@ -390,7 +380,7 @@ void metrics_thread_func(std::shared_ptr<environet::net::Metrics> metrics,
             // Run iperf3 test if server is configured
             if (!config.metrics.iperf_server.empty()) {
                 auto iperf_results = metrics->iperf3_test(config.metrics.iperf_server, 
-                                                        config.metrics.iperf3_duration);
+                                                        config.metrics.iperf_duration);
                 correlator->push_iperf3_results(iperf_results);
                 if (iperf_results.success) {
                     LOGD("iPerf3: {} Mbps", iperf_results.bandwidth_mbps);
